@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>My Google AI Studio App</title>
+    <script>
+      // Prevent React or other polyfills from throwing when assigning window.fetch
+      if (typeof window !== 'undefined') {
+        let currentFetch = window.fetch;
+        try {
+          Object.defineProperty(window, 'fetch', {
+            configurable: true,
+            enumerable: true,
+            get: () => currentFetch,
+            set: (v) => { currentFetch = v; }
+          });
+        } catch (e) {
+          console.error("Failed to patch fetch:", e);
+        }
+        
+        // Also intercept Object.defineProperty to prevent vConsole or others from breaking it again
+        const origDefineProperty = Object.defineProperty;
+        Object.defineProperty = function(obj, prop, desc) {
+          if (obj === window && prop === 'fetch') {
+             if (desc && !desc.set && desc.get) {
+               const originalGet = desc.get;
+               desc.set = function(val) {
+                 // Do not throw, just optionally update something or ignore
+                 currentFetch = val;
+               };
+               desc.get = function() {
+                 return currentFetch || originalGet.call(this);
+               }
+             }
+          }
+          return origDefineProperty(obj, prop, desc);
+        };
+      }
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+
